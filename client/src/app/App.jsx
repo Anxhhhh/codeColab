@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { Users, FileCode2, Settings, Terminal, Share2 } from 'lucide-react';
 import { MonacoBinding } from "y-monaco";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import * as Y from "yjs";
 import { SocketIOProvider } from "y-socket.io"
 
@@ -13,28 +12,51 @@ const connectedUsers = [
 ];
 
 const App = () => {
+
+  const [username, setUsername] = useState("");
+
+
   const editorRef = useRef(null);
   const ydoc = useMemo(() => new Y.Doc(), []);
   const yText = useMemo(() => ydoc.getText("code"), []);
 
-
-  const [code, setCode] = useState('function helloWorld() {\n  console.log("Hello, world!");\n}');
+  const providerRef = useRef(null);
+  const bindingRef = useRef(null);
 
   const handleMount = (editor) => {
     editorRef.current = editor;
 
-    const provider = new SocketIOProvider("http://localhost:3000", "monaco", ydoc, {
-      autoConnect:true,
-      
-    });
+    if (!providerRef.current) {
+      providerRef.current = new SocketIOProvider("ws://localhost:3000", "monaco", ydoc, {
+        autoConnect: true,
+      });
+      providerRef.current.on('status', ({ status }) => {
+        console.log("SocketIOProvider status:", status);
+      });
+    }
 
-    const monacoBinding = new MonacoBinding(
-      yText,
-      editorRef.current.getModel(),
-      new Set([editorRef.current]),
-      provider.awareness
+    if (!bindingRef.current) {
+      bindingRef.current = new MonacoBinding(
+        yText,
+        editorRef.current.getModel(),
+        new Set([editorRef.current]),
+        providerRef.current.awareness
+      );
+    }
+  }
+
+  if (!username) {
+    return (
+      <main className='h-screen w-full bg-gray-900 flex items-center justify-center' >
+        <div className='flex flex-col gap-4'>
+          <input   type="text"
+           placeholder='Enter your username' 
+            className='p-2 border border-gray-300 rounded' />
+            <button className="p-2 bg-blue-500 text-white rounded" onClick={() => setUsername(username)}>Join</button>
+
+        </div>
+      </main>
     )
-
   }
 
 
@@ -109,8 +131,7 @@ const App = () => {
             onMount={handleMount}
             defaultLanguage="javascript"
             theme="vs-dark"
-            value={code}
-            onChange={(val) => setCode(val)}
+            defaultValue='function helloWorld() {\n  console.log("Hello, world!");\n}'
             options={{
               minimap: { enabled: true },
               fontSize: 14,
