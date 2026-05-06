@@ -2,8 +2,11 @@ import express from "express"
 import { createServer } from "http"
 import { Server } from "socket.io"
 import { YSocketIO } from "y-socket.io/dist/server"
+import path from "path"
 
 const app = express();
+app.use(express.static("public"));
+
 const httpServer = createServer(app);
 
 app.use(express.json());
@@ -29,14 +32,7 @@ app.use(express.json());
 
 
 
-app.get("/", (req, res) => {
-    res.status(200).json({
-        message: "Hello World",
-        success: true
-    })
 
-
-});
 
 app.get("/health", (req, res) => {
 
