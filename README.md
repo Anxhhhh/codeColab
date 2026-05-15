@@ -58,3 +58,18 @@ To deploy this application to AWS, you can use several services since it is dock
    - Connect your ECR image or GitHub repository to App Runner for a fully managed container deployment.
 
 *Note: Ensure that you map the correct ports (e.g., 3000) in your AWS security groups to allow web traffic.*
+
+## 🏗️ Multi-File Architecture
+
+codeColab supports a robust multi-file and folder workspace synchronized in real-time across all connected clients.
+
+### Data Model
+- **Workspace Tree**: Synchronized using a shared Yjs `Y.Map` named `tree`. It stores a flat list of nodes where each node contains `{ id, name, type, parentId }`. The `parentId` establishes the hierarchy, supporting nested folders while being highly resilient to concurrent moves and updates.
+- **File Contents**: Synchronized using a shared Yjs `Y.Map` named `files`. Each entry maps a file's `id` to its own isolated `Y.Text` instance.
+
+### Event & Shared-Structure Approach
+We utilize a single `Y.Doc` shared over the existing `Socket.io` connection (`y-socket.io`). When users open different files, the React application dynamically switches the `MonacoBinding` to the corresponding `Y.Text` without needing to rejoin different Socket.io rooms, ensuring lightning-fast file switching and constant UI responsiveness.
+
+### Known Limitations
+- **Data Persistence**: Since there is no database layer currently implemented, all file structures and contents reside in memory (managed by the `y-socket.io` server). If the Node.js server restarts, the data will be lost.
+- **Strict Concurrency on Naming**: If two users create files with the exact same name in the same folder at the exact same millisecond, the UI will reflect both. Conflict resolution for names isn't strictly enforced server-side.
